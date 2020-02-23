@@ -40,8 +40,15 @@ RCT_EXPORT_MODULE();
 
       [_audioRecorder updateMeters];
       float _currentLevel = [_audioRecorder averagePowerForChannel: 0];
+      float _peakLevel = [_audioRecorder peakPowerForChannel: 0];
       [body setObject:[NSNumber numberWithFloat:_currentLevel] forKey:@"value"];
       [body setObject:[NSNumber numberWithFloat:_currentLevel] forKey:@"rawValue"];
+      [body setObject:[NSNumber numberWithFloat:_peakLevel] forKey:@"peakValue"];
+    
+      // Applying LowPass Filter
+      const double ALPHA = 0.1;
+      double lowPassResult = ALPHA * _peakLevel + (1.0 - ALPHA) * lowPassResult;
+      [body setObject:[NSNumber numberWithFloat:lowPassResult] forKey:@"lowPassValue"];
 
       [self.bridge.eventDispatcher sendAppEventWithName:@"frame" body:body];
 
@@ -69,10 +76,10 @@ RCT_EXPORT_METHOD(start:(int)monitorInterval)
   [self stopProgressTimer];
 
   NSDictionary *recordSettings = [NSDictionary dictionaryWithObjectsAndKeys:
-          [NSNumber numberWithInt:AVAudioQualityLow], AVEncoderAudioQualityKey,
-          [NSNumber numberWithInt:kAudioFormatMPEG4AAC], AVFormatIDKey,
+          [NSNumber numberWithInt:AVAudioQualityMax], AVEncoderAudioQualityKey,
+          [NSNumber numberWithInt:kAudioFormatAppleLossless], AVFormatIDKey,
           [NSNumber numberWithInt:1], AVNumberOfChannelsKey,
-          [NSNumber numberWithFloat:22050.0], AVSampleRateKey,
+          [NSNumber numberWithFloat:44100.0], AVSampleRateKey,
           nil];
 
   NSError *error = nil;
